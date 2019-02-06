@@ -358,27 +358,28 @@ resource "azurerm_virtual_machine" "masternode0" {
     }
 
     storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "16.04-LTS"
-    version   = "latest"
-  }
-  storage_os_disk {
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-    disk_size_gb = 40 //TODO: originally 1000
-    name = "node0_osdisk"
-  }
+        publisher = "microsoft-aks"
+        offer     = "aks"
+        sku       = "aks-ubuntu-1604-201901"
+        version   = "2019.01.11"
+    }
+    
+    storage_os_disk {
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb = 40 //TODO: originally 1000
+        name = "masternode0_osdisk"
+    }
 
-  storage_data_disk {
-      create_option = "Empty"
-      disk_size_gb = 40 //TODO: originally 4000
-      lun = 0
-      name = "masternode0-etcddisk"
-  }
-  
-  depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.agent-vm0-nic0"]
+    storage_data_disk {
+        create_option = "Empty"
+        disk_size_gb = 40 //TODO: originally 4000
+        lun = 0
+        name = "masternode0-etcddisk"
+    }
+
+    depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.master-vm0-nic0"]
 }
 
 resource "azurerm_virtual_machine" "masternode1" {
@@ -400,26 +401,28 @@ resource "azurerm_virtual_machine" "masternode1" {
     }
 
     storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "16.04-LTS"
-    version   = "latest"
-  }
-  storage_os_disk {
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-    disk_size_gb = 40 //TODO: originally 1000
-    name = "node1_osdisk"
-  }
+        publisher = "microsoft-aks"
+        offer     = "aks"
+        sku       = "aks-ubuntu-1604-201901"
+        version   = "2019.01.11"
+    }
+  
+    storage_os_disk {
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb = 40 //TODO: originally 1000
+        name = "masternode1_osdisk"
+    }
 
-  storage_data_disk {
-      create_option = "Empty"
-      disk_size_gb = 40 //TODO: originally 4000
-      lun = 0
-      name = "masternode1-etcddisk"
-  }
-  depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.agent-vm1-nic0"]
+    storage_data_disk {
+        create_option = "Empty"
+        disk_size_gb = 40 //TODO: originally 4000
+        lun = 0
+        name = "masternode1-etcddisk"
+    }
+
+    depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.master-vm1-nic0"]
 }
 
 resource "azurerm_virtual_machine" "masternode2" {
@@ -441,26 +444,137 @@ resource "azurerm_virtual_machine" "masternode2" {
     }
 
     storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "16.04-LTS"
-    version   = "latest"
-  }
-  storage_os_disk {
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-    disk_size_gb = 40 //TODO: originally 1000
-    name = "node2_osdisk"
-  }
+        publisher = "microsoft-aks"
+        offer     = "aks"
+        sku       = "aks-ubuntu-1604-201901"
+        version   = "2019.01.11"
+    }
+  
+    storage_os_disk {
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb = 40 //TODO: originally 1000
+        name = "masternode2_osdisk"
+    }
 
-  storage_data_disk {
+    storage_data_disk {
       create_option = "Empty"
       disk_size_gb = 40 //TODO: originally 4000
       lun = 0
       name = "masternode2-etcddisk"
-  }
+    }
 
-depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.agent-vm2-nic0"]
+    depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.master-vm2-nic0"]
 
+}
+
+//Agent Nodes
+//------------------------------------------------------------------------------------------
+resource "azurerm_virtual_machine" "agentnode0" {
+    name = "agentnode0"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+
+    availability_set_id = "${azurerm_availability_set.agentAvailabilitySet.id}"
+    vm_size = "Standard_D2_v2"
+    network_interface_ids = ["${azurerm_network_interface.agent-vm0-nic0.id}"]
+    os_profile {
+        admin_username = "cloudadmin"
+        admin_password = "Password!123Password"
+        computer_name = "agentnode0"
+        //TODO: Add customData which is the cloudinit stuff
+    }
+    os_profile_linux_config {
+        disable_password_authentication = false
+    }
+
+    storage_image_reference {
+        publisher = "microsoft-aks"
+        offer     = "aks"
+        sku       = "aks-ubuntu-1604-201901"
+        version   = "2019.01.11"
+    }
+  
+    storage_os_disk {
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb = 40 //TODO: originally 1000
+        name = "agentnode0_osdisk"
+    }
+  
+    depends_on = ["azurerm_availability_set.agentAvailabilitySet", "azurerm_network_interface.agent-vm0-nic0"]
+}
+
+resource "azurerm_virtual_machine" "agentnode1" {
+    name = "agentnode1"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+
+    availability_set_id = "${azurerm_availability_set.agentAvailabilitySet.id}"
+    vm_size = "Standard_D2_v2"
+    network_interface_ids = ["${azurerm_network_interface.agent-vm1-nic0.id}"]
+    os_profile {
+        admin_username = "cloudadmin"
+        admin_password = "Password!123Password"
+        computer_name = "agentnode1"
+        //TODO: Add customData which is the cloudinit stuff
+    }
+    os_profile_linux_config {
+        disable_password_authentication = false
+    }
+
+    storage_image_reference {
+        publisher = "microsoft-aks"
+        offer     = "aks"
+        sku       = "aks-ubuntu-1604-201901"
+        version   = "2019.01.11"
+    }
+
+    storage_os_disk {
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb = 40 //TODO: originally 1000
+        name = "agentnode1_osdisk"
+    }
+  
+    depends_on = ["azurerm_availability_set.agentAvailabilitySet", "azurerm_network_interface.agent-vm1-nic0"]
+}
+
+resource "azurerm_virtual_machine" "agentnode2" {
+    name = "agentnode2"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+
+    availability_set_id = "${azurerm_availability_set.agentAvailabilitySet.id}"
+    vm_size = "Standard_D2_v2"
+    network_interface_ids = ["${azurerm_network_interface.agent-vm2-nic0.id}"]
+    os_profile {
+        admin_username = "cloudadmin"
+        admin_password = "Password!123Password"
+        computer_name = "agentnode2"
+        //TODO: Add customData which is the cloudinit stuff
+    }
+    os_profile_linux_config {
+        disable_password_authentication = false
+    }
+
+    storage_image_reference {
+        publisher = "microsoft-aks"
+        offer     = "aks"
+        sku       = "aks-ubuntu-1604-201901"
+        version   = "2019.01.11"
+    }
+
+    storage_os_disk {
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb = 40 //TODO: originally 1000
+        name = "agentnode2_osdisk"
+    }
+  
+    depends_on = ["azurerm_availability_set.agentAvailabilitySet", "azurerm_network_interface.agent-vm2-nic0"]
 }

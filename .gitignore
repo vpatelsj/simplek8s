@@ -2,3 +2,4 @@
 *.tfstate
 *.backup
 run.sh
+.terraform.tfstate.lock.info
