@@ -14,7 +14,7 @@ AKS Engine tries to create a giant ARM Template which deploys more than 50 diffe
 This is my humble attempt to decouple deployment of Azure resources from the actual provisioning/installation of kubernetes components on the infrastructure. By using terraform to deploy azure resources, I am trying to leverage terraform's capability to reconcile when errors happen and detect drift over time. 
 
 
-Here's a blueprint of a kubernetes cluster deployed via ACS Engine:
+Here's a blueprint of a kubernetes cluster deployed via AKS Engine:
 ![blueprint](images/blueprint.png)
 
 My first goal is to deploy the above resources via terraform on azure.
