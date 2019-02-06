@@ -5,7 +5,7 @@ This is an attempt to deploy a simple unmanaged kubernetes cluster via terraform
 
 In a world where tools such as AKS Engine, KOPS etc. already exist, one might question why even embark on this journey. I don't really have a silver bullet answer. I've contributed to these tools and I use them on day to day basis to manage AKS Infrastructure at Microsoft. 
 
-The story of kubernetes deployment today is already overdone. People have moved on to figure out day2 challenges of  managing a kubernetes cluster. 
+The story of kubernetes deployment in today's date is already overdone. People have moved on to figure out day2 challenges of  managing a kubernetes cluster. 
 
 I am coming back with a quest to see if what we use day to day can be even more simpler. 
 
