@@ -114,10 +114,8 @@ resource "azurerm_lb_probe" "underlay1_loadbalancer1_tcpHTTPSproble" {
     interval_in_seconds = 5
 }
 
-
 //Public IP
 //------------------------------------------------------------------------------------------
-
 resource "azurerm_public_ip" "underlay1_public_ip" {
     name = "underlay1_public_ip"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
@@ -210,10 +208,6 @@ resource "azurerm_lb_nat_rule" "underlay1_loadbalancer2_NAT_rule3" {
     protocol = "Tcp"
     loadbalancer_id = "${azurerm_lb.underlay1_loadbalancer2.id}"
 }
-
-
-
-
 
 //Master NICs
 //------------------------------------------------------------------------------------------
@@ -578,3 +572,11 @@ resource "azurerm_virtual_machine" "agentnode2" {
   
     depends_on = ["azurerm_availability_set.agentAvailabilitySet", "azurerm_network_interface.agent-vm2-nic0"]
 }
+
+//Custom Script Extension on Master Nodes
+//------------------------------------------------------------------------------------------
+//TODO: Implement
+
+//Custom Script Extension on Agent Nodes
+//------------------------------------------------------------------------------------------
+//TODO: Implement
