@@ -251,7 +251,7 @@ resource "azurerm_network_interface" "master-vm1-nic0" {
    }   
 }
 
-resource "azurerm_network_interface" "master-vm2-nic" {
+resource "azurerm_network_interface" "master-vm2-nic0" {
     name = "master-vm2-nic0"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
     location = "East US"
@@ -269,6 +269,7 @@ resource "azurerm_network_interface" "master-vm2-nic" {
 }
 
 //Agent NICs
+//------------------------------------------------------------------------------------------
 resource "azurerm_network_interface" "agent-vm0-nic0" {
     name = "agent-vm0-nic0"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
@@ -312,4 +313,154 @@ resource "azurerm_network_interface" "agent-vm2-nic0" {
         subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
         primary = true
    }        
+}
+
+//Master Availability Sets
+//------------------------------------------------------------------------------------------
+resource "azurerm_availability_set" "masterAvailabilitySet" {
+    name = "masterAvailabilitySet"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}" 
+    platform_fault_domain_count = 2
+    platform_update_domain_count = 3
+    managed = true
+}
+
+//Agent Availability Sets
+//------------------------------------------------------------------------------------------
+resource "azurerm_availability_set" "agentAvailabilitySet" {
+    name = "agentAvailabilitySet"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    platform_fault_domain_count = 2
+    platform_update_domain_count = 3
+    managed = true
+}
+
+//Master Nodes
+//------------------------------------------------------------------------------------------
+resource "azurerm_virtual_machine" "masternode0" {
+    name = "masternode0"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+
+    availability_set_id = "${azurerm_availability_set.masterAvailabilitySet.id}"
+    vm_size = "Standard_D2_v2"
+    network_interface_ids = ["${azurerm_network_interface.master-vm0-nic0.id}"]
+    os_profile {
+        admin_username = "cloudadmin"
+        admin_password = "Password!123Password"
+        computer_name = "masternode0"
+        //TODO: Add customData which is the cloudinit stuff
+    }
+    os_profile_linux_config {
+        disable_password_authentication = false
+    }
+
+    storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+  storage_os_disk {
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+    disk_size_gb = 40 //TODO: originally 1000
+    name = "node0_osdisk"
+  }
+
+  storage_data_disk {
+      create_option = "Empty"
+      disk_size_gb = 40 //TODO: originally 4000
+      lun = 0
+      name = "masternode0-etcddisk"
+  }
+  
+  depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.agent-vm0-nic0"]
+}
+
+resource "azurerm_virtual_machine" "masternode1" {
+    name = "masternode1"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+
+    availability_set_id = "${azurerm_availability_set.masterAvailabilitySet.id}"
+    vm_size = "Standard_D2_v2"
+    network_interface_ids = ["${azurerm_network_interface.master-vm1-nic0.id}"]
+    os_profile {
+        admin_username = "cloudadmin"
+        admin_password = "Password!123Password"
+        computer_name = "masternode1"
+        //TODO: Add customData which is the cloudinit stuff
+    }
+    os_profile_linux_config {
+        disable_password_authentication = false
+    }
+
+    storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+  storage_os_disk {
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+    disk_size_gb = 40 //TODO: originally 1000
+    name = "node1_osdisk"
+  }
+
+  storage_data_disk {
+      create_option = "Empty"
+      disk_size_gb = 40 //TODO: originally 4000
+      lun = 0
+      name = "masternode1-etcddisk"
+  }
+  depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.agent-vm1-nic0"]
+}
+
+resource "azurerm_virtual_machine" "masternode2" {
+    name = "masternode2"
+    location = "East US"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+
+    availability_set_id = "${azurerm_availability_set.masterAvailabilitySet.id}"
+    vm_size = "Standard_D2_v2"
+    network_interface_ids = ["${azurerm_network_interface.master-vm2-nic0.id}"]
+    os_profile {
+        admin_username = "cloudadmin"
+        admin_password = "Password!123Password"
+        computer_name = "masternode2"
+        //TODO: Add customData which is the cloudinit stuff
+    }
+    os_profile_linux_config {
+        disable_password_authentication = false
+    }
+
+    storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+  storage_os_disk {
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+    disk_size_gb = 40 //TODO: originally 1000
+    name = "node2_osdisk"
+  }
+
+  storage_data_disk {
+      create_option = "Empty"
+      disk_size_gb = 40 //TODO: originally 4000
+      lun = 0
+      name = "masternode2-etcddisk"
+  }
+
+depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.agent-vm2-nic0"]
+
 }
