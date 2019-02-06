@@ -215,7 +215,7 @@ resource "azurerm_lb_nat_rule" "underlay1_loadbalancer2_NAT_rule3" {
 
 
 
-//NICs
+//Master NICs
 //------------------------------------------------------------------------------------------
 resource "azurerm_network_interface" "master-vm0-nic0" {
     name = "master-vm0-nic0"
@@ -231,9 +231,7 @@ resource "azurerm_network_interface" "master-vm0-nic0" {
         private_ip_address_allocation = "Static"
         subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
         primary = true
-   }
-
-        
+   }        
 }
 
 resource "azurerm_network_interface" "master-vm1-nic0" {
@@ -250,9 +248,7 @@ resource "azurerm_network_interface" "master-vm1-nic0" {
         private_ip_address_allocation = "Static"
         subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
         primary = true
-   }
-
-        
+   }   
 }
 
 resource "azurerm_network_interface" "master-vm2-nic" {
@@ -270,4 +266,50 @@ resource "azurerm_network_interface" "master-vm2-nic" {
         subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
         primary = true
    }
+}
+
+//Agent NICs
+resource "azurerm_network_interface" "agent-vm0-nic0" {
+    name = "agent-vm0-nic0"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    location = "East US"
+    enable_ip_forwarding = true
+    enable_accelerated_networking = true
+    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1"]
+    ip_configuration {
+        name = "ipconfig1"
+        private_ip_address_allocation = "Dynamic"
+        subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
+        primary = true
+   }        
+}
+
+resource "azurerm_network_interface" "agent-vm1-nic0" {
+    name = "agent-vm1-nic0"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    location = "East US"
+    enable_ip_forwarding = true
+    enable_accelerated_networking = true
+    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1"]
+    ip_configuration {
+        name = "ipconfig1"
+        private_ip_address_allocation = "Dynamic"
+        subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
+        primary = true
+   }        
+}
+
+resource "azurerm_network_interface" "agent-vm2-nic0" {
+    name = "agent-vm2-nic0"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    location = "East US"
+    enable_ip_forwarding = true
+    enable_accelerated_networking = true
+    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1"]
+    ip_configuration {
+        name = "ipconfig1"
+        private_ip_address_allocation = "Dynamic"
+        subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
+        primary = true
+   }        
 }
