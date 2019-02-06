@@ -9,7 +9,7 @@ The story of kubernetes deployment in today's date is already overdone. People h
 
 I am coming back with a quest to see if what we use day to day can be even more simpler. 
 
-ACS Engine tries to create a giant ARM Template which deploys more than 50 different azure resources(count grows exponentially with number of agents) such as VMs/loadbalancers/publicIPs/virtual networks and so on. Then there's actual deployment of kubernetes components via custom script extensions and cloud-init. As the template has grown overtime, its no longer idempotent. If the template deployment fails, users have little choice but to delete everything and start from scratch.
+AKS Engine tries to create a giant ARM Template which deploys more than 50 different azure resources(count grows exponentially with number of agents) such as VMs/loadbalancers/publicIPs/virtual networks and so on. Then there's actual deployment of kubernetes components via custom script extensions and cloud-init. As the template has grown overtime, its no longer idempotent. If the template deployment fails, users have little choice but to delete everything and start from scratch.
 
 This is my humble attempt to decouple deployment of Azure resources from the actual provisioning/installation of kubernetes components on the infrastructure. By using terraform to deploy azure resources, I am trying to leverage terraform's capability to reconcile when errors happen and detect drift over time. 
 
