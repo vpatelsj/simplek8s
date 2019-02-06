@@ -1,8 +1,3 @@
-provider "azure" {
-    client_id = "YOUR_CLIENT_ID"
-    client_secret = "YOUR_CLIENT_SECRET"
-}
-
 resource "azurerm_resource_group" "underlay1" {
     name = "underlay1"
     location = "East US"
@@ -162,7 +157,7 @@ resource "azurerm_lb_rule" "underlay1_loadbalancer2_LBRuleHTTPS" {
     backend_port = 443
     idle_timeout_in_minutes = 5 
     enable_floating_ip = false
-    load_distribution = "default"
+    load_distribution = "Default"
     backend_address_pool_id = "${azurerm_lb_backend_address_pool.underlay1_loadbalancer2_backend_pool.id}"
     frontend_ip_configuration_name = "underlay1_loadbalancer2_frontend_ip_name"
     probe_id = "${azurerm_lb_probe.underlay1_loadbalancer2_tcpHTTPSprob.id}"
@@ -220,20 +215,59 @@ resource "azurerm_lb_nat_rule" "underlay1_loadbalancer2_NAT_rule3" {
 
 
 
+//NICs
+//------------------------------------------------------------------------------------------
+resource "azurerm_network_interface" "master-vm0-nic0" {
+    name = "master-vm0-nic0"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    location = "East US"
+    enable_ip_forwarding = true
+    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1","azurerm_lb.underlay1_loadbalancer1"]
+    ip_configuration {
+        name = "ipconfig1"
+        load_balancer_backend_address_pools_ids = ["${azurerm_lb_backend_address_pool.underlay1_loadbalancer1_backend_pool.id}","${azurerm_lb_backend_address_pool.underlay1_loadbalancer2_backend_pool.id}"]
+        load_balancer_inbound_nat_rules_ids = ["${azurerm_lb_nat_rule.underlay1_loadbalancer2_NAT_rule1.id}"]
+        private_ip_address = "10.240.255.5"
+        private_ip_address_allocation = "Static"
+        subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
+        primary = true
+   }
 
+        
+}
 
-//resource "azurerm_network_interface" "master-vm0-nic0" {
-//    name = "master-vm0-nic0"
-//    resource_group_name = "${azurerm_resource_group.underlay1.name}"
-//    location = "East US"
-//    enable_ip_forwarding = true
-//    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1","azurerm_lb.underlay1_loadbalancer1"]
-//    ip_configuration {
-//        name = "ipconfig1"
-//        load_balancer_backend_address_pools_ids = ["${azurerm_lb_backend_address_pool.underlay1_loadbalancer1_backend_pool.id}"]
-        //TODO: add external load balancer backend pool id in above array
-//        load_balancer_inbound_nat_rules_ids = 
-//    }
-//}
+resource "azurerm_network_interface" "master-vm1-nic0" {
+    name = "master-vm1-nic0"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    location = "East US"
+    enable_ip_forwarding = true
+    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1","azurerm_lb.underlay1_loadbalancer1"]
+    ip_configuration {
+        name = "ipconfig1"
+        load_balancer_backend_address_pools_ids = ["${azurerm_lb_backend_address_pool.underlay1_loadbalancer1_backend_pool.id}","${azurerm_lb_backend_address_pool.underlay1_loadbalancer2_backend_pool.id}"]
+        load_balancer_inbound_nat_rules_ids = ["${azurerm_lb_nat_rule.underlay1_loadbalancer2_NAT_rule2.id}"]
+        private_ip_address = "10.240.255.6"
+        private_ip_address_allocation = "Static"
+        subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
+        primary = true
+   }
 
+        
+}
 
+resource "azurerm_network_interface" "master-vm2-nic" {
+    name = "master-vm2-nic0"
+    resource_group_name = "${azurerm_resource_group.underlay1.name}"
+    location = "East US"
+    enable_ip_forwarding = true
+    depends_on = ["azurerm_virtual_network.underlay1_virtualnetwork1","azurerm_lb.underlay1_loadbalancer1"]
+    ip_configuration {
+        name = "ipconfig1"
+        load_balancer_backend_address_pools_ids = ["${azurerm_lb_backend_address_pool.underlay1_loadbalancer1_backend_pool.id}","${azurerm_lb_backend_address_pool.underlay1_loadbalancer2_backend_pool.id}"]
+        load_balancer_inbound_nat_rules_ids = ["${azurerm_lb_nat_rule.underlay1_loadbalancer2_NAT_rule3.id}"]
+        private_ip_address = "10.240.255.7"
+        private_ip_address_allocation = "Static"
+        subnet_id = "${azurerm_subnet.underlay1_mastersubnet.id}"
+        primary = true
+   }
+}
