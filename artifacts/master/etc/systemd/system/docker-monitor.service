@@ -1,0 +1,10 @@
+[Unit]
+Description=Kubernetes health monitoring for container runtime
+After=kube-master-configuration.service
+[Service]
+Restart=always
+RestartSec=10
+ExecStartPre=/bin/chmod 544 /usr/local/bin/health-monitor.sh
+ExecStart=/usr/local/bin/health-monitor.sh container-runtime
+[Install]
+WantedBy=kubernetes.target
