@@ -341,14 +341,18 @@ resource "azurerm_virtual_machine" "masternode0" {
     availability_set_id = "${azurerm_availability_set.masterAvailabilitySet.id}"
     vm_size = "Standard_D2_v2"
     network_interface_ids = ["${azurerm_network_interface.master-vm0-nic0.id}"]
+    
     os_profile {
-        admin_username = "cloudadmin"
-        admin_password = "Password!123Password"
-        computer_name = "masternode0"
-        //TODO: Add customData which is the cloudinit stuff
+        computer_name  = "underlay1master0"
+        admin_username = "azureuser"
     }
+
     os_profile_linux_config {
-        disable_password_authentication = false
+        disable_password_authentication = true
+        ssh_keys {
+            path     = "/home/azureuser/.ssh/authorized_keys"
+            key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCo+O7xxSEXIevZNv4hlSnuSjwpMjb1ayuxgdXBKZT3rQwdNWp7OXPpmAR3Hd/bY73mI2CsxY6HNIj+z5vc7bTZ0zoquNYCfYrf3AXa7quzmrtIkm1sAlI/LZQ/qTgXZLw5m7QEOETe5nlZKXxaQ1joWhsi4+Q7r3ZnJyOZJ0LksAvvj1HGhy1pfzgy8czrREG7WNgQlUZKT9B3QgFj+6lcjQ7TT+0/XW7/pE8MKHClNZvPSt8uyNz0QupUZkeM6NCdBF3Kx875g+Ow7AOgKP5ZIbw+7KupK3/eGBChCEG++Vp5ndGoW6p0XIv4vME4nw0k6Y5kXtpZ+nY7ZrwoUTRWqEezPBkwYnN6fHOx81BqbUjkjg41urYCAVPM3Pw8mQERJZNcv1pBk/GFuYcfXK/v30Q5lTyhTQEjahpPPEDR3Q/Y0MNQhV+zoRLGYChBrxs2iOgX5eQlu+MjwgrPzxI0uD+f7y8xUAPHOPmPfomIW6FdhLl8EkUY3Iw3+eFF5KJMf5bqXA1VNw8v22bY9j1XHIYqWIDvy3wQ3Jw3W+ayeGLguRpOIgXaTNFG1+HwpQperPvUV78LWExdkfxQO4QCrKQCqcT8NL3swSzfcjITfzHsS7Gi3I7V/+cStMeKB99qpzvvltKwhIXfT1V0xPpbMeJT7rUrPtmoPrqMC7r1ow== vpatelsj@gmail.com"
+        }
     }
 
     storage_image_reference {
@@ -357,7 +361,7 @@ resource "azurerm_virtual_machine" "masternode0" {
         sku       = "aks-ubuntu-1604-201901"
         version   = "2019.01.11"
     }
-    
+  
     storage_os_disk {
         caching           = "ReadWrite"
         create_option     = "FromImage"
@@ -368,15 +372,45 @@ resource "azurerm_virtual_machine" "masternode0" {
 
     storage_data_disk {
         create_option = "Empty"
-        disk_size_gb = 40 //TODO: originally 4000
+        disk_size_gb = 10 //TODO: originally 4000
         lun = 0
         name = "masternode0-etcddisk"
+    }
+
+    provisioner "file" {
+
+    connection {
+        type     = "ssh"
+        host     = "${azurerm_public_ip.underlay1_public_ip.ip_address}"
+        user     = "azureuser"
+    }
+
+        source = "bin/master0artifacts.tar.gz"
+        destination = "/tmp/master0artifacts.tar.gz"
     }
 
     depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.master-vm0-nic0"]
 }
 
-resource "azurerm_virtual_machine" "masternode1" {
+resource "azurerm_virtual_machine_extension" "underlay1master0cse" {
+    name                 = "underlay1master0cse"
+    location             = "East US"
+    resource_group_name  = "${azurerm_resource_group.underlay1.name}"
+    virtual_machine_name = "${azurerm_virtual_machine.masternode0.name}"
+    publisher            = "Microsoft.Azure.Extensions"
+    type                 = "CustomScript"
+    type_handler_version = "2.0"
+
+    settings = <<SETTINGS
+    {
+        "commandToExecute": "sudo chown root:root /tmp/master0artifacts.tar.gz && cd / && sudo tar -xf /tmp/master0artifacts.tar.gz"
+    }
+    SETTINGS
+    tags {
+        environment = "Production"
+    }
+}
+/* resource "azurerm_virtual_machine" "masternode1" {
     name = "masternode1"
     location = "East US"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
@@ -461,11 +495,11 @@ resource "azurerm_virtual_machine" "masternode2" {
 
     depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.master-vm2-nic0"]
 
-}
+} */
 
 //Agent Nodes
 //------------------------------------------------------------------------------------------
-resource "azurerm_virtual_machine" "agentnode0" {
+/* resource "azurerm_virtual_machine" "agentnode0" {
     name = "agentnode0"
     location = "East US"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
@@ -572,7 +606,7 @@ resource "azurerm_virtual_machine" "agentnode2" {
   
     depends_on = ["azurerm_availability_set.agentAvailabilitySet", "azurerm_network_interface.agent-vm2-nic0"]
 }
-
+ */
 //Custom Script Extension on Master Nodes
 //------------------------------------------------------------------------------------------
 //TODO: Implement
@@ -580,3 +614,6 @@ resource "azurerm_virtual_machine" "agentnode2" {
 //Custom Script Extension on Agent Nodes
 //------------------------------------------------------------------------------------------
 //TODO: Implement
+
+
+
