@@ -331,6 +331,44 @@ resource "azurerm_availability_set" "agentAvailabilitySet" {
     managed = true
 }
 
+//Upload Artifacts to blob storage
+//-------------------------------------------------------------------------------------------
+
+resource "azurerm_storage_account" "artifactsstorageaccount" {
+  name                     = "artifactsstorageaccount"
+  resource_group_name      = "${azurerm_resource_group.underlay1.name}"
+  location                 = "${azurerm_resource_group.underlay1.location}"
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+}
+
+resource "azurerm_storage_container" "artifactsblobstorage" {
+  name                  = "artifactsblobstorage"
+  resource_group_name   = "${azurerm_resource_group.underlay1.name}"
+  storage_account_name  = "${azurerm_storage_account.artifactsstorageaccount.name}"
+  container_access_type = "blob"
+}
+
+resource "azurerm_storage_blob" "master0Artifactsblobobject" {
+  depends_on             = ["azurerm_storage_container.artifactsblobstorage"]
+  name                   = "master0artifacts.tar.gz"
+  resource_group_name    = "${azurerm_resource_group.underlay1.name}"
+  storage_account_name   = "${azurerm_storage_account.artifactsstorageaccount.name}"
+  storage_container_name = "${azurerm_storage_container.artifactsblobstorage.name}"
+  type                   = "block"
+  source                 = "bin/master0artifacts.tar.gz"
+}
+
+resource "azurerm_storage_blob" "agent0Artifactsblobobject" {
+  depends_on             = ["azurerm_storage_container.artifactsblobstorage"]
+  name                   = "agent0artifacts.tar.gz"
+  resource_group_name    = "${azurerm_resource_group.underlay1.name}"
+  storage_account_name   = "${azurerm_storage_account.artifactsstorageaccount.name}"
+  storage_container_name = "${azurerm_storage_container.artifactsblobstorage.name}"
+  type                   = "block"
+  source                 = "bin/agent0artifacts.tar.gz"
+}
+
 //Master Nodes
 //------------------------------------------------------------------------------------------
 resource "azurerm_virtual_machine" "masternode0" {
@@ -377,22 +415,23 @@ resource "azurerm_virtual_machine" "masternode0" {
         name = "masternode0-etcddisk"
     }
 
-    provisioner "file" {
+    /* provisioner "file" {
 
-    connection {
-        type     = "ssh"
-        host     = "${azurerm_public_ip.underlay1_public_ip.ip_address}"
-        user     = "azureuser"
-    }
+        connection {
+            type     = "ssh"
+            host     = "${azurerm_public_ip.underlay1_public_ip.ip_address}"
+            user     = "azureuser"
+        }
 
         source = "bin/master0artifacts.tar.gz"
         destination = "/tmp/master0artifacts.tar.gz"
-    }
+    } */
 
     depends_on = ["azurerm_availability_set.masterAvailabilitySet", "azurerm_network_interface.master-vm0-nic0"]
 }
 
 resource "azurerm_virtual_machine_extension" "underlay1master0cse" {
+
     name                 = "underlay1master0cse"
     location             = "East US"
     resource_group_name  = "${azurerm_resource_group.underlay1.name}"
@@ -403,12 +442,14 @@ resource "azurerm_virtual_machine_extension" "underlay1master0cse" {
 
     settings = <<SETTINGS
     {
-        "commandToExecute": "sudo chown root:root /tmp/master0artifacts.tar.gz && cd / && sudo tar -xf /tmp/master0artifacts.tar.gz"
+        "commandToExecute": "cd /tmp && wget https://${azurerm_storage_account.artifactsstorageaccount.name}.blob.core.windows.net/${azurerm_storage_container.artifactsblobstorage.name}/master0artifacts.tar.gz && sudo chown root:root /tmp/master0artifacts.tar.gz && cd / && sudo tar -xf /tmp/master0artifacts.tar.gz"
     }
     SETTINGS
     tags {
         environment = "Production"
     }
+
+    depends_on = ["azurerm_storage_blob.master0Artifactsblobobject"]
 }
 /* resource "azurerm_virtual_machine" "masternode1" {
     name = "masternode1"
@@ -499,7 +540,7 @@ resource "azurerm_virtual_machine" "masternode2" {
 
 //Agent Nodes
 //------------------------------------------------------------------------------------------
-/* resource "azurerm_virtual_machine" "agentnode0" {
+ resource "azurerm_virtual_machine" "agentnode0" {
     name = "agentnode0"
     location = "East US"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
@@ -507,14 +548,18 @@ resource "azurerm_virtual_machine" "masternode2" {
     availability_set_id = "${azurerm_availability_set.agentAvailabilitySet.id}"
     vm_size = "Standard_D2_v2"
     network_interface_ids = ["${azurerm_network_interface.agent-vm0-nic0.id}"]
+
     os_profile {
-        admin_username = "cloudadmin"
-        admin_password = "Password!123Password"
-        computer_name = "agentnode0"
-        //TODO: Add customData which is the cloudinit stuff
+        computer_name  = "underlay1agent0"
+        admin_username = "azureuser"
     }
+
     os_profile_linux_config {
-        disable_password_authentication = false
+        disable_password_authentication = true
+        ssh_keys {
+            path     = "/home/azureuser/.ssh/authorized_keys"
+            key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCo+O7xxSEXIevZNv4hlSnuSjwpMjb1ayuxgdXBKZT3rQwdNWp7OXPpmAR3Hd/bY73mI2CsxY6HNIj+z5vc7bTZ0zoquNYCfYrf3AXa7quzmrtIkm1sAlI/LZQ/qTgXZLw5m7QEOETe5nlZKXxaQ1joWhsi4+Q7r3ZnJyOZJ0LksAvvj1HGhy1pfzgy8czrREG7WNgQlUZKT9B3QgFj+6lcjQ7TT+0/XW7/pE8MKHClNZvPSt8uyNz0QupUZkeM6NCdBF3Kx875g+Ow7AOgKP5ZIbw+7KupK3/eGBChCEG++Vp5ndGoW6p0XIv4vME4nw0k6Y5kXtpZ+nY7ZrwoUTRWqEezPBkwYnN6fHOx81BqbUjkjg41urYCAVPM3Pw8mQERJZNcv1pBk/GFuYcfXK/v30Q5lTyhTQEjahpPPEDR3Q/Y0MNQhV+zoRLGYChBrxs2iOgX5eQlu+MjwgrPzxI0uD+f7y8xUAPHOPmPfomIW6FdhLl8EkUY3Iw3+eFF5KJMf5bqXA1VNw8v22bY9j1XHIYqWIDvy3wQ3Jw3W+ayeGLguRpOIgXaTNFG1+HwpQperPvUV78LWExdkfxQO4QCrKQCqcT8NL3swSzfcjITfzHsS7Gi3I7V/+cStMeKB99qpzvvltKwhIXfT1V0xPpbMeJT7rUrPtmoPrqMC7r1ow== vpatelsj@gmail.com"
+        }
     }
 
     storage_image_reference {
@@ -535,7 +580,29 @@ resource "azurerm_virtual_machine" "masternode2" {
     depends_on = ["azurerm_availability_set.agentAvailabilitySet", "azurerm_network_interface.agent-vm0-nic0"]
 }
 
-resource "azurerm_virtual_machine" "agentnode1" {
+resource "azurerm_virtual_machine_extension" "underlay1agent0cse" {
+
+    name                 = "underlay1agent0cse"
+    location             = "East US"
+    resource_group_name  = "${azurerm_resource_group.underlay1.name}"
+    virtual_machine_name = "${azurerm_virtual_machine.agentnode0.name}"
+    publisher            = "Microsoft.Azure.Extensions"
+    type                 = "CustomScript"
+    type_handler_version = "2.0"
+
+    settings = <<SETTINGS
+    {
+        "commandToExecute": "cd /tmp && wget https://${azurerm_storage_account.artifactsstorageaccount.name}.blob.core.windows.net/${azurerm_storage_container.artifactsblobstorage.name}/agent0artifacts.tar.gz && sudo chown root:root /tmp/agent0artifacts.tar.gz && cd / && sudo tar -xf /tmp/agent0artifacts.tar.gz"
+    }
+    SETTINGS
+    tags {
+        environment = "Production"
+    }
+
+    depends_on = ["azurerm_storage_blob.agent0Artifactsblobobject"]
+}
+
+/* resource "azurerm_virtual_machine" "agentnode1" {
     name = "agentnode1"
     location = "East US"
     resource_group_name = "${azurerm_resource_group.underlay1.name}"
@@ -614,6 +681,3 @@ resource "azurerm_virtual_machine" "agentnode2" {
 //Custom Script Extension on Agent Nodes
 //------------------------------------------------------------------------------------------
 //TODO: Implement
-
-
-
